@@ -1,9 +1,9 @@
 # 🌍 Global Weather API
 
+A cloud-based web service built in Microsoft Azure that fetches real-time weather and air quality data for 29 major cities across 6 continents.
 ![Dashboard](p1.png)
 ![JSON Response](p2.png)
 
-A cloud-based web service built in Microsoft Azure that fetches real-time weather and air quality data for 29 major cities across 6 continents.
 
 ## Features
 
