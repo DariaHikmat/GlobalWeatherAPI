@@ -37,7 +37,3 @@ A client sends an HTTP request to the Azure Function. The function fetches data 
 **Africa** — Cairo, Nairobi, Cape Town, Lagos, Casablanca
 
 **Oceania** — Sydney, Auckland, Melbourne
-
----
-
-Built as part of an individual project in Cloud Technologies using Microsoft Azure for Students.
