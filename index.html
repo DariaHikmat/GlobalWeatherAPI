@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Weather</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f0e8;
+      --bg2:      #ede6d6;
+      --surface:  #faf7f2;
+      --surface2: #f0ead8;
+      --border:   rgba(120, 90, 50, 0.12);
+      --border2:  rgba(120, 90, 50, 0.22);
+      --text:     #2c2016;
+      --muted:    #8a7560;
+      --accent:   #c0622a;
+      --accent2:  #7a9e6e;
+      --gold:     #c9922a;
+      --font-serif: 'Lora', Georgia, serif;
+      --font-sans:  'DM Sans', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      padding: 2.5rem 1.5rem 5rem;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px; right: -200px;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(192,98,42,0.07), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .blob2 {
+      position: fixed;
+      bottom: -150px; left: -150px;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(122,158,110,0.08), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border2);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .logo {
+      font-family: var(--font-serif);
+      font-size: 2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: var(--text);
+    }
+    .logo em { color: var(--accent); font-style: italic; }
+
+    .header-right { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
+    .meta { font-size: 0.72rem; color: var(--muted); text-align: right; line-height: 1.8; }
+
+    .refresh-btn {
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      padding: 0.45rem 1.1rem;
+      border: 1px solid var(--border2);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .refresh-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
+    .refresh-btn.spinning svg { animation: spin 1s linear infinite; }
+
+    #top3-section { margin-bottom: 3rem; }
+
+    .section-label {
+      font-family: var(--font-serif);
+      font-size: 0.8rem;
+      font-style: italic;
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+
+    .top3-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .top3-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 1.4rem 1.2rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+    .top3-card:hover { transform: translateY(-3px); }
+    .top3-card.rank-1 { background: linear-gradient(145deg, #fff8f0, var(--surface)); border-color: rgba(192,98,42,0.3); }
+
+    .rank-badge {
+      font-family: var(--font-serif);
+      font-size: 2.5rem;
+      font-weight: 600;
+      font-style: italic;
+      color: var(--border2);
+      position: absolute;
+      top: 0.6rem; right: 1rem;
+      line-height: 1;
+    }
+    .rank-1 .rank-badge { color: rgba(192,98,42,0.2); }
+
+    .top3-medal { font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .top3-city { font-family: var(--font-serif); font-size: 1.3rem; font-weight: 600; text-transform: capitalize; margin-bottom: 0.2rem; }
+    .top3-continent { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem; }
+    .top3-temp { font-size: 2rem; font-weight: 300; color: var(--accent); letter-spacing: -0.03em; line-height: 1; margin-bottom: 0.5rem; }
+    .top3-air { font-size: 0.7rem; color: var(--muted); }
+
+    .filter-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2rem; margin-top: 2rem; }
+
+    .filter-btn {
+      font-family: var(--font-sans);
+      font-size: 0.73rem;
+      padding: 0.4rem 1rem;
+      border: 1px solid var(--border2);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .continent-section { margin-bottom: 3rem; animation: fadeUp 0.4s ease; }
+
+    .continent-label {
+      font-family: var(--font-serif);
+      font-size: 0.78rem;
+      font-style: italic;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .continent-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .city-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1rem; }
+
+    .city-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.2rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .city-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(120,90,50,0.08); }
+    .city-card.best-card { background: linear-gradient(145deg, #fff8f0, var(--surface)); border-color: rgba(192,98,42,0.3); }
+
+    .city-name { font-family: var(--font-serif); font-size: 1rem; font-weight: 600; text-transform: capitalize; margin-bottom: 0.15rem; }
+    .city-time { font-size: 0.65rem; color: var(--muted); margin-bottom: 1rem; }
+
+    .temp-row { display: flex; align-items: baseline; gap: 0.2rem; margin-bottom: 0.9rem; }
+    .temp-value { font-size: 2.2rem; font-weight: 300; letter-spacing: -0.04em; line-height: 1; }
+    .temp-unit { font-size: 0.8rem; color: var(--muted); }
+
+    .divider { height: 1px; background: var(--border); margin: 0.8rem 0; }
+
+    .stat-row { display: flex; flex-direction: column; gap: 0.35rem; }
+    .stat-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; }
+    .stat-key { color: var(--muted); }
+    .stat-val { font-weight: 500; }
+
+    .air-badge { display: inline-block; font-size: 0.62rem; padding: 0.2rem 0.6rem; border-radius: 999px; font-weight: 500; }
+    .air-very-good  { background: rgba(122,158,110,0.15); color: #4a7a40; }
+    .air-good       { background: rgba(122,158,110,0.1);  color: #5a8a50; }
+    .air-moderate   { background: rgba(201,146,42,0.15);  color: #a06820; }
+    .air-poor       { background: rgba(192,98,42,0.15);   color: #c0622a; }
+    .air-very-poor  { background: rgba(160,60,30,0.2);    color: #a03020; }
+    .air-unknown    { background: rgba(138,117,96,0.1);   color: var(--muted); }
+
+    .best-tag { position: absolute; top: 10px; right: 10px; font-size: 0.55rem; padding: 0.2rem 0.55rem; background: var(--accent); color: #fff; border-radius: 999px; font-weight: 500; letter-spacing: 0.06em; }
+
+    #loader { text-align: center; padding: 5rem 0; }
+    .loader-ring { width: 36px; height: 36px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 1rem; }
+    .loader-text { font-family: var(--font-serif); font-style: italic; font-size: 0.85rem; color: var(--muted); }
+
+    .error-card { background: rgba(192,98,42,0.08); border: 1px solid rgba(192,98,42,0.2); border-radius: 10px; padding: 0.8rem 1rem; font-size: 0.72rem; color: var(--accent); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 600px) { .top3-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="blob2"></div>
+  <div class="wrapper">
+
+    <header>
+      <div class="logo">Global<em>Weather</em></div>
+      <div class="header-right">
+        <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+          </svg>
+          Uppdatera
+        </button>
+        <div class="meta" id="last-updated">Hämtar data…</div>
+      </div>
+    </header>
+
+    <div id="top3-section" style="display:none;">
+      <div class="section-label">Bästa städerna just nu</div>
+      <div class="top3-grid" id="top3-grid"></div>
+    </div>
+
+    <div class="filter-bar" id="filter-bar">
+      <button class="filter-btn active" data-continent="All" onclick="filterContinent(this)">Alla</button>
+    </div>
+
+    <div id="loader">
+      <div class="loader-ring"></div>
+      <div class="loader-text">Hämtar väderdata från världen…</div>
+    </div>
+
+    <div id="content" style="display:none;"></div>
+  </div>
+
+  <script>
+
+    const API_URL = "https://weatherapipieomy-ffcqe8h9ewc3b6bq.germanywestcentral-01.azurewebsites.net/api/Weatherfunction";
+
+    let activeContinent = "All";
+    const medals = ["🥇","🥈","🥉"];
+
+    function capitalize(str) {
+      const map = {
+        newyork:"New York", losangeles:"Los Angeles", capetown:"Cape Town",
+        saopaulo:"São Paulo", buenosaires:"Buenos Aires", mexicocity:"Mexico City",
+        bogota:"Bogotá", casablanca:"Casablanca", mumbai:"Mumbai",
+        shanghai:"Shanghai", seoul:"Seoul", bangkok:"Bangkok",
+        chicago:"Chicago", melbourne:"Melbourne", lagos:"Lagos",
+        madrid:"Madrid", rome:"Rome"
+      };
+      return map[str] || str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function formatTime(isoStr) {
+      if (!isoStr) return "—";
+      try { return new Date(isoStr).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }); }
+      catch { return isoStr; }
+    }
+
+    function tempColor(t) {
+      if (t >= 32) return "#c0622a";
+      if (t >= 22) return "#c9922a";
+      if (t >= 12) return "#7a9e6e";
+      if (t >= 2)  return "#6a8eae";
+      return "#8888bb";
+    }
+
+    function airClass(rating) {
+      return "air-" + (rating || "unknown").toLowerCase().replace(/\s+/g,"-");
+    }
+
+    function windArrow(deg) {
+      return ["↑","↗","→","↘","↓","↙","←","↖"][Math.round(deg/45)%8];
+    }
+
+    function renderTop3(top3) {
+      return top3.map(entry => {
+        const d = entry.data;
+        const temp = d?.temperature != null ? Math.round(d.temperature) + "°C" : "—";
+        const air  = d?.air_quality?.rating || "—";
+        return `
+          <div class="top3-card ${entry.rank===1?"rank-1":""}">
+            <div class="rank-badge">${entry.rank}</div>
+            <div class="top3-medal">${medals[entry.rank-1]}</div>
+            <div class="top3-city">${capitalize(entry.city)}</div>
+            <div class="top3-continent">${entry.continent}</div>
+            <div class="top3-temp">${temp}</div>
+            <div class="top3-air">Luft: ${air}</div>
+          </div>`;
+      }).join("");
+    }
+
+    function renderCity(city, data, bestCity) {
+      const isBest = city === bestCity;
+      if (data.error) {
+        return `<div class="city-card"><div class="city-name">${capitalize(city)}</div><div class="error-card">⚠ ${data.error}</div></div>`;
+      }
+      return `
+        <div class="city-card ${isBest?"best-card":""}">
+          ${isBest?'<div class="best-tag">★ Bäst</div>':""}
+          <div class="city-name">${capitalize(city)}</div>
+          <div class="city-time">Lokal tid ${formatTime(data.local_time)}</div>
+          <div class="temp-row">
+            <div class="temp-value" style="color:${tempColor(data.temperature)}">${Math.round(data.temperature)}</div>
+            <div class="temp-unit">°C</div>
+          </div>
+          <div class="divider"></div>
+          <div class="stat-row">
+            <div class="stat-item"><span class="stat-key">Vind</span><span class="stat-val">${windArrow(data.winddirection)} ${Math.round(data.windspeed)} km/h</span></div>
+            <div class="stat-item"><span class="stat-key">PM2.5</span><span class="stat-val">${data.air_quality?.pm2_5!=null?data.air_quality.pm2_5.toFixed(1)+" µg":"—"}</span></div>
+            <div class="stat-item"><span class="stat-key">Luft</span><span class="air-badge ${airClass(data.air_quality?.rating)}">${data.air_quality?.rating||"—"}</span></div>
+          </div>
+        </div>`;
+    }
+
+    function renderContinent(name, cities, bestCity) {
+      const cards = Object.entries(cities).map(([c,d])=>renderCity(c,d,bestCity)).join("");
+      return `<div class="continent-section" data-continent="${name}"><div class="continent-label">${name}</div><div class="city-grid">${cards}</div></div>`;
+    }
+
+    function filterContinent(btn) {
+      document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      activeContinent = btn.dataset.continent;
+      document.querySelectorAll(".continent-section").forEach(sec=>{
+        sec.style.display = (activeContinent==="All"||sec.dataset.continent===activeContinent)?"":"none";
+      });
+    }
+
+    async function loadData() {
+      const loader = document.getElementById("loader");
+      const content = document.getElementById("content");
+      const top3sec = document.getElementById("top3-section");
+      const refreshBtn = document.getElementById("refreshBtn");
+
+      loader.style.display = "block";
+      content.style.display = "none";
+      top3sec.style.display = "none";
+      refreshBtn.classList.add("spinning");
+
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+
+        if (json.top3?.length) {
+          document.getElementById("top3-grid").innerHTML = renderTop3(json.top3);
+          top3sec.style.display = "block";
+        }
+
+        const filterBar = document.getElementById("filter-bar");
+        const existing = [...filterBar.querySelectorAll("[data-continent]")].map(b=>b.dataset.continent);
+        Object.keys(json.data).forEach(cont=>{
+          if (!existing.includes(cont)) {
+            const btn = document.createElement("button");
+            btn.className = "filter-btn";
+            btn.dataset.continent = cont;
+            btn.textContent = cont;
+            btn.onclick = function(){ filterContinent(this); };
+            filterBar.appendChild(btn);
+          }
+        });
+
+        content.innerHTML = Object.entries(json.data).map(([cont,cities])=>renderContinent(cont,cities,json.best_city)).join("");
+
+        document.querySelectorAll(".continent-section").forEach(sec=>{
+          sec.style.display = (activeContinent==="All"||sec.dataset.continent===activeContinent)?"":"none";
+        });
+
+        document.getElementById("last-updated").innerHTML = `Uppdaterad ${new Date().toLocaleTimeString()}<br>via Azure Functions`;
+        loader.style.display = "none";
+        content.style.display = "block";
+
+      } catch(err) {
+        loader.innerHTML = `<div style="font-family:'Lora',serif;font-style:italic;color:var(--accent);font-size:0.85rem;line-height:2;">Kunde inte ansluta till API<br><span style="font-size:0.72rem;color:var(--muted);font-style:normal;">${err.message}</span><br><span style="font-size:0.7rem;color:var(--muted);font-style:normal;">Kontrollera API_URL och CORS i Azure</span></div>`;
+      }
+
+      refreshBtn.classList.remove("spinning");
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
